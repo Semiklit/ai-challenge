@@ -100,7 +100,13 @@ fun main(args: Array<String>) = runBlocking {
     try {
         while (true) {
             print("Вы: ")
-            val userInput = readlnOrNull()?.trim() ?: break
+            System.out.flush()
+            val userInput = readlnOrNull()?.trim()
+
+            if (userInput == null) {
+                println("\n[Ввод завершён]")
+                break
+            }
 
             when {
                 userInput.isEmpty() -> continue

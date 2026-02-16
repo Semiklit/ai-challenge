@@ -49,4 +49,7 @@ tasks.withType<JavaExec> {
     systemProperty("openai.api.key", localProperties.getProperty("openai.api.key", ""))
     systemProperty("openai.base.url", localProperties.getProperty("openai.base.url", "https://api.proxyapi.ru/openai/v1"))
     systemProperty("openai.model", localProperties.getProperty("openai.model", "gpt-5-mini"))
+
+    // Подключение stdin для интерактивного режима
+    standardInput = System.`in`
 }
