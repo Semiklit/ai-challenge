@@ -1,0 +1,4 @@
+# Скопируйте этот файл в local.properties и заполните своими значениями
+openai.api.key=your-api-key-here
+openai.base.url=https://api.proxyapi.ru/openai/v1
+openai.model=gpt-5-mini

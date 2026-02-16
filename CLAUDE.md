@@ -46,12 +46,17 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 ## AI Configuration
 
-API settings are stored in `Config.kt`:
+API settings are stored in `local.properties` file (not committed to repository):
 - **Endpoint**: https://api.proxyapi.ru/openai/v1
 - **Model**: gpt-5-mini
-- **API Key**: Stored in repository (Config.API_KEY)
+- **API Key**: Stored securely in local.properties
 
-The project makes direct HTTP requests to OpenAI-compatible API using Ktor client with kotlinx-serialization for JSON handling.
+To set up the project:
+1. Copy `local.properties.example` to `local.properties`
+2. Add your API key to `local.properties`
+3. Run the project with `./gradlew run`
+
+The project makes direct HTTP requests to OpenAI-compatible API using Ktor client with kotlinx-serialization for JSON handling. Configuration is loaded at runtime from system properties set by Gradle.
 
 ## Migration Path
 

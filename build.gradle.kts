@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     kotlin("jvm") version "2.1.0"
     kotlin("plugin.serialization") version "2.1.0"
@@ -9,6 +11,14 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+// Загрузка local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 dependencies {
@@ -32,4 +42,11 @@ tasks.test {
 
 kotlin {
     jvmToolchain(17)
+}
+
+// Передача свойств в runtime
+tasks.withType<JavaExec> {
+    systemProperty("openai.api.key", localProperties.getProperty("openai.api.key", ""))
+    systemProperty("openai.base.url", localProperties.getProperty("openai.base.url", "https://api.proxyapi.ru/openai/v1"))
+    systemProperty("openai.model", localProperties.getProperty("openai.model", "gpt-5-mini"))
 }
