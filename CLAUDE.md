@@ -19,9 +19,12 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 ### Build and Run
 ```bash
-./gradlew run                # Run the CLI application
+./chat.sh                    # Run interactive chat (recommended)
+./chat.sh "System prompt"    # Run with custom system prompt
+./gradlew run                # Run via Gradle
 ./gradlew build              # Build the project
 ./gradlew clean              # Clean build artifacts
+./gradlew installDist        # Create distribution in build/install/
 ```
 
 ### Testing
@@ -39,9 +42,11 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 ## Project Structure
 
-- **Main entry point**: `src/main/kotlin/dev/nsemiklit/Main.kt` (currently `dev.nsemiklit.MainKt`)
+- **Main entry point**: `src/main/kotlin/dev/nsemiklit/Main.kt` - Interactive CLI chat
+- **ChatClient class**: Manages conversation history and API communication
 - **Package**: `dev.nsemiklit`
-- **Configuration**: `src/main/kotlin/dev/nsemiklit/Config.kt` - AI API settings
+- **Configuration**: `src/main/kotlin/dev/nsemiklit/Config.kt` - AI API settings loaded from system properties
+- **Launch script**: `chat.sh` - Convenience wrapper for running the app
 - Tests follow standard Kotlin/JVM structure in `src/test/kotlin/`
 
 ## AI Configuration
@@ -57,6 +62,18 @@ To set up the project:
 3. Run the project with `./gradlew run`
 
 The project makes direct HTTP requests to OpenAI-compatible API using Ktor client with kotlinx-serialization for JSON handling. Configuration is loaded at runtime from system properties set by Gradle.
+
+## CLI Usage
+
+The application runs in interactive chat mode:
+- System prompt is passed as command-line arguments
+- Maintains conversation history for context
+- Supports commands: `/exit`, `/quit`, `/clear`
+
+Example:
+```bash
+./chat.sh You are a helpful coding assistant specialized in Kotlin
+```
 
 ## Migration Path
 
