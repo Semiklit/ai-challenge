@@ -8,10 +8,11 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 ## Technology Stack
 
-- **Language**: Kotlin 1.9.22
+- **Language**: Kotlin 2.1.0
 - **Build Tool**: Gradle 8.5 with Kotlin DSL
 - **JVM**: Toolchain 17
-- **AI Library**: koog (to be integrated)
+- **HTTP Client**: Ktor 3.2.3 (OkHttp engine)
+- **Serialization**: kotlinx-serialization-json 1.7.3
 - **Future Platform**: Android
 
 ## Development Commands
@@ -40,7 +41,17 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 - **Main entry point**: `src/main/kotlin/dev/nsemiklit/Main.kt` (currently `dev.nsemiklit.MainKt`)
 - **Package**: `dev.nsemiklit`
+- **Configuration**: `src/main/kotlin/dev/nsemiklit/Config.kt` - AI API settings
 - Tests follow standard Kotlin/JVM structure in `src/test/kotlin/`
+
+## AI Configuration
+
+API settings are stored in `Config.kt`:
+- **Endpoint**: https://api.proxyapi.ru/openai/v1
+- **Model**: gpt-5-mini
+- **API Key**: Stored in repository (Config.API_KEY)
+
+The project makes direct HTTP requests to OpenAI-compatible API using Ktor client with kotlinx-serialization for JSON handling.
 
 ## Migration Path
 
