@@ -7,6 +7,9 @@ build/
 ### Secrets ###
 local.properties
 
+### Claude Code ###
+.claude/settings.local.json
+
 ### IntelliJ IDEA ###
 .idea/
 *.iws

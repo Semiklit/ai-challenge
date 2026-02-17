@@ -10,6 +10,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.util.concurrent.TimeUnit
 
 @Serializable
 data class ChatRequest(
@@ -35,6 +36,13 @@ data class Choice(
 
 class ChatClient(private val systemPrompt: String) {
     private val client = HttpClient(OkHttp) {
+        engine {
+            config {
+                connectTimeout(30, TimeUnit.SECONDS)
+                readTimeout(300, TimeUnit.SECONDS)  // 5 минут на ответ
+                writeTimeout(30, TimeUnit.SECONDS)
+            }
+        }
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
