@@ -15,7 +15,8 @@ import java.util.concurrent.TimeUnit
 @Serializable
 data class ChatRequest(
     val model: String,
-    val messages: List<Message>
+    val messages: List<Message>,
+    val temperature: Double? = null
 )
 
 @Serializable
@@ -34,7 +35,56 @@ data class Choice(
     val message: Message
 )
 
-class ChatClient(private val systemPrompt: String) {
+data class CommandLineArgs(
+    val systemPrompt: String,
+    val temperature: Double
+)
+
+fun parseArgs(args: Array<String>): CommandLineArgs {
+    var temperature = 0.7
+    val promptParts = mutableListOf<String>()
+
+    var i = 0
+    while (i < args.size) {
+        val arg = args[i]
+        when {
+            arg.startsWith("--temperature=") -> {
+                temperature = arg.substringAfter("=").toDoubleOrNull()
+                    ?: throw IllegalArgumentException("Некорректное значение температуры: ${arg.substringAfter("=")}")
+            }
+            arg == "-t" || arg == "--temperature" -> {
+                if (i + 1 >= args.size) {
+                    throw IllegalArgumentException("Не указано значение для параметра $arg")
+                }
+                temperature = args[i + 1].toDoubleOrNull()
+                    ?: throw IllegalArgumentException("Некорректное значение температуры: ${args[i + 1]}")
+                i++ // Пропускаем следующий аргумент
+            }
+            else -> {
+                promptParts.add(arg)
+            }
+        }
+        i++
+    }
+
+    val systemPrompt = if (promptParts.isNotEmpty()) {
+        promptParts.joinToString(" ")
+    } else {
+        "Ты полезный ассистент, который отвечает на русском языке."
+    }
+
+    // Проверка валидности температуры (обычно от 0 до 2)
+    if (temperature < 0.0 || temperature > 2.0) {
+        throw IllegalArgumentException("Температура должна быть в диапазоне от 0.0 до 2.0, получено: $temperature")
+    }
+
+    return CommandLineArgs(systemPrompt, temperature)
+}
+
+class ChatClient(
+    private val systemPrompt: String,
+    private val temperature: Double = 0.7
+) {
     private val client = HttpClient(OkHttp) {
         engine {
             config {
@@ -62,7 +112,8 @@ class ChatClient(private val systemPrompt: String) {
 
         val request = ChatRequest(
             model = Config.MODEL,
-            messages = conversationHistory
+            messages = conversationHistory,
+            temperature = temperature
         )
 
         val response: ChatResponse = client.post("${Config.BASE_URL}/chat/completions") {
@@ -89,21 +140,37 @@ fun main(args: Array<String>) = runBlocking {
     println()
 
     // Парсинг аргументов командной строки
-    val systemPrompt = if (args.isNotEmpty()) {
-        args.joinToString(" ")
-    } else {
-        println("Системный промпт не указан. Используется промпт по умолчанию.")
-        "Ты полезный ассистент, который отвечает на русском языке."
+    val parsedArgs = try {
+        parseArgs(args)
+    } catch (e: IllegalArgumentException) {
+        println("Ошибка парсинга аргументов: ${e.message}")
+        println()
+        println("Использование:")
+        println("  ./chat.sh [опции] [системный промпт]")
+        println()
+        println("Опции:")
+        println("  -t, --temperature <значение>  Температура модели (0.0-2.0, по умолчанию 0.7)")
+        println("  --temperature=<значение>       Альтернативный формат")
+        println()
+        println("Примеры:")
+        println("  ./chat.sh -t 0.5 Ты полезный ассистент")
+        println("  ./chat.sh --temperature=1.2 Ответь креативно")
+        return@runBlocking
     }
 
-    println("Системный промпт: $systemPrompt")
+    if (args.isEmpty()) {
+        println("Системный промпт не указан. Используется промпт по умолчанию.")
+    }
+
+    println("Системный промпт: ${parsedArgs.systemPrompt}")
     println("Модель: ${Config.MODEL}")
+    println("Температура: ${parsedArgs.temperature}")
     println()
     println("Введите сообщение для AI (или /exit для выхода, /clear для очистки истории)")
     println("─".repeat(50))
     println()
 
-    val chatClient = ChatClient(systemPrompt)
+    val chatClient = ChatClient(parsedArgs.systemPrompt, parsedArgs.temperature)
 
     try {
         while (true) {

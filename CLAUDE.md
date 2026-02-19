@@ -19,12 +19,13 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 ### Build and Run
 ```bash
-./chat.sh                    # Run interactive chat (recommended)
-./chat.sh "System prompt"    # Run with custom system prompt
-./gradlew run                # Run via Gradle
-./gradlew build              # Build the project
-./gradlew clean              # Clean build artifacts
-./gradlew installDist        # Create distribution in build/install/
+./chat.sh                              # Run interactive chat (recommended)
+./chat.sh "System prompt"              # Run with custom system prompt
+./chat.sh -t 0.5 "System prompt"       # Run with custom temperature
+./gradlew run                          # Run via Gradle
+./gradlew build                        # Build the project
+./gradlew clean                        # Clean build artifacts
+./gradlew installDist                  # Create distribution in build/install/
 ```
 
 ### Testing
@@ -69,11 +70,24 @@ The application runs in interactive chat mode:
 - System prompt is passed as command-line arguments
 - Maintains conversation history for context
 - Supports commands: `/exit`, `/quit`, `/clear`
+- Temperature can be configured via command-line options
 
-Example:
+### Command-line options:
+- `-t, --temperature <value>` - Set model temperature (0.0-2.0, default: 0.7)
+- `--temperature=<value>` - Alternative format for temperature
+
+### Examples:
 ```bash
 ./chat.sh You are a helpful coding assistant specialized in Kotlin
+./chat.sh -t 0.5 Ты полезный ассистент
+./chat.sh --temperature=1.2 Be creative and think outside the box
+./chat.sh --temperature=0.1 -t will be ignored if --temperature= is used
 ```
+
+Temperature controls randomness in responses:
+- Lower values (0.0-0.3): More focused and deterministic
+- Medium values (0.4-0.8): Balanced creativity
+- Higher values (0.9-2.0): More creative and varied
 
 ## Migration Path
 
