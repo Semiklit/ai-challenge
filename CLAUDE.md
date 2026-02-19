@@ -19,13 +19,13 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 ### Build and Run
 ```bash
-./chat.sh                              # Run interactive chat (recommended)
-./chat.sh "System prompt"              # Run with custom system prompt
-./chat.sh -t 0.5 "System prompt"       # Run with custom temperature
-./gradlew run                          # Run via Gradle
-./gradlew build                        # Build the project
-./gradlew clean                        # Clean build artifacts
-./gradlew installDist                  # Create distribution in build/install/
+./chat.sh                                    # Run interactive chat (recommended)
+./chat.sh "System prompt"                    # Run with custom system prompt
+./chat.sh -m gpt-4o -t 0.5 "System prompt"   # Run with custom model and temperature
+./gradlew run                                # Run via Gradle
+./gradlew build                              # Build the project
+./gradlew clean                              # Clean build artifacts
+./gradlew installDist                        # Create distribution in build/install/
 ```
 
 ### Testing
@@ -54,7 +54,7 @@ AI Challenge is a Kotlin project for exploring AI integration. It starts as a CL
 
 API settings are stored in `local.properties` file (not committed to repository):
 - **Endpoint**: https://api.proxyapi.ru/openai/v1
-- **Model**: gpt-5-mini
+- **Model**: gpt-4o (default, can be overridden via command-line)
 - **API Key**: Stored securely in local.properties
 
 To set up the project:
@@ -73,21 +73,29 @@ The application runs in interactive chat mode:
 - Temperature can be configured via command-line options
 
 ### Command-line options:
+- `-m, --model <name>` - Set AI model (default: gpt-4o)
+- `--model=<name>` - Alternative format for model
 - `-t, --temperature <value>` - Set model temperature (0.0-2.0, default: 0.7)
 - `--temperature=<value>` - Alternative format for temperature
 
 ### Examples:
 ```bash
 ./chat.sh You are a helpful coding assistant specialized in Kotlin
-./chat.sh -t 0.5 Ты полезный ассистент
-./chat.sh --temperature=1.2 Be creative and think outside the box
-./chat.sh --temperature=0.1 -t will be ignored if --temperature= is used
+./chat.sh -m gpt-4o -t 0.5 Ты полезный ассистент
+./chat.sh --model=gpt-4-turbo --temperature=1.2 Be creative
+./chat.sh -m gpt-3.5-turbo Fast responses please
 ```
 
-Temperature controls randomness in responses:
+**Temperature** controls randomness in responses:
 - Lower values (0.0-0.3): More focused and deterministic
 - Medium values (0.4-0.8): Balanced creativity
 - Higher values (0.9-2.0): More creative and varied
+
+**Supported models**:
+- `gpt-4o` - Latest GPT-4 optimized model (default, supports temperature)
+- `gpt-4-turbo` - Fast GPT-4 model
+- `gpt-3.5-turbo` - Faster, cheaper model
+- Note: Reasoning models (o1, o1-mini) do not support custom temperature
 
 ## Migration Path
 

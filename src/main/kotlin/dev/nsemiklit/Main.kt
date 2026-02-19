@@ -5,6 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
@@ -27,7 +28,8 @@ data class Message(
 
 @Serializable
 data class ChatResponse(
-    val choices: List<Choice>
+    val choices: List<Choice>? = null,
+    val error: ErrorDetail? = null
 )
 
 @Serializable
@@ -35,13 +37,22 @@ data class Choice(
     val message: Message
 )
 
+@Serializable
+data class ErrorDetail(
+    val message: String,
+    val type: String? = null,
+    val code: String? = null
+)
+
 data class CommandLineArgs(
     val systemPrompt: String,
-    val temperature: Double
+    val temperature: Double,
+    val model: String
 )
 
 fun parseArgs(args: Array<String>): CommandLineArgs {
     var temperature = 0.7
+    var model = Config.MODEL
     val promptParts = mutableListOf<String>()
 
     var i = 0
@@ -58,6 +69,22 @@ fun parseArgs(args: Array<String>): CommandLineArgs {
                 }
                 temperature = args[i + 1].toDoubleOrNull()
                     ?: throw IllegalArgumentException("Некорректное значение температуры: ${args[i + 1]}")
+                i++ // Пропускаем следующий аргумент
+            }
+            arg.startsWith("--model=") -> {
+                model = arg.substringAfter("=")
+                if (model.isBlank()) {
+                    throw IllegalArgumentException("Некорректное значение модели: пустая строка")
+                }
+            }
+            arg == "-m" || arg == "--model" -> {
+                if (i + 1 >= args.size) {
+                    throw IllegalArgumentException("Не указано значение для параметра $arg")
+                }
+                model = args[i + 1]
+                if (model.isBlank()) {
+                    throw IllegalArgumentException("Некорректное значение модели: пустая строка")
+                }
                 i++ // Пропускаем следующий аргумент
             }
             else -> {
@@ -78,12 +105,13 @@ fun parseArgs(args: Array<String>): CommandLineArgs {
         throw IllegalArgumentException("Температура должна быть в диапазоне от 0.0 до 2.0, получено: $temperature")
     }
 
-    return CommandLineArgs(systemPrompt, temperature)
+    return CommandLineArgs(systemPrompt, temperature, model)
 }
 
 class ChatClient(
     private val systemPrompt: String,
-    private val temperature: Double = 0.7
+    private val temperature: Double = 0.7,
+    private val model: String = Config.MODEL
 ) {
     private val client = HttpClient(OkHttp) {
         engine {
@@ -111,16 +139,38 @@ class ChatClient(
         conversationHistory.add(Message("user", userMessage))
 
         val request = ChatRequest(
-            model = Config.MODEL,
+            model = model,
             messages = conversationHistory,
             temperature = temperature
         )
 
-        val response: ChatResponse = client.post("${Config.BASE_URL}/chat/completions") {
+        val httpResponse: HttpResponse = client.post("${Config.BASE_URL}/chat/completions") {
             contentType(ContentType.Application.Json)
             header("Authorization", "Bearer ${Config.API_KEY}")
             setBody(request)
-        }.body()
+        }
+
+        // Получаем сырой текст для отладки
+        val rawResponse = httpResponse.bodyAsText()
+
+        // Проверяем статус ответа
+        if (!httpResponse.status.isSuccess()) {
+            throw RuntimeException("HTTP ошибка ${httpResponse.status.value}: $rawResponse")
+        }
+
+        val response: ChatResponse = Json {
+            ignoreUnknownKeys = true
+        }.decodeFromString(rawResponse)
+
+        // Обработка ошибок от API
+        if (response.error != null) {
+            throw RuntimeException("API ошибка: ${response.error.message} (type: ${response.error.type}, code: ${response.error.code})")
+        }
+
+        // Проверка наличия choices
+        if (response.choices.isNullOrEmpty()) {
+            throw RuntimeException("API вернул пустой ответ. Сырой ответ: $rawResponse")
+        }
 
         val assistantMessage = response.choices.first().message
         conversationHistory.add(assistantMessage)
@@ -149,12 +199,15 @@ fun main(args: Array<String>) = runBlocking {
         println("  ./chat.sh [опции] [системный промпт]")
         println()
         println("Опции:")
+        println("  -m, --model <название>        Модель AI (по умолчанию gpt-4o)")
+        println("  --model=<название>             Альтернативный формат")
         println("  -t, --temperature <значение>  Температура модели (0.0-2.0, по умолчанию 0.7)")
         println("  --temperature=<значение>       Альтернативный формат")
         println()
         println("Примеры:")
-        println("  ./chat.sh -t 0.5 Ты полезный ассистент")
-        println("  ./chat.sh --temperature=1.2 Ответь креативно")
+        println("  ./chat.sh -m gpt-4o -t 0.5 Ты полезный ассистент")
+        println("  ./chat.sh --model=gpt-4-turbo --temperature=1.2 Ответь креативно")
+        println("  ./chat.sh -m gpt-3.5-turbo Быстрый ассистент")
         return@runBlocking
     }
 
@@ -163,14 +216,14 @@ fun main(args: Array<String>) = runBlocking {
     }
 
     println("Системный промпт: ${parsedArgs.systemPrompt}")
-    println("Модель: ${Config.MODEL}")
+    println("Модель: ${parsedArgs.model}")
     println("Температура: ${parsedArgs.temperature}")
     println()
     println("Введите сообщение для AI (или /exit для выхода, /clear для очистки истории)")
     println("─".repeat(50))
     println()
 
-    val chatClient = ChatClient(parsedArgs.systemPrompt, parsedArgs.temperature)
+    val chatClient = ChatClient(parsedArgs.systemPrompt, parsedArgs.temperature, parsedArgs.model)
 
     try {
         while (true) {

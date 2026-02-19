@@ -8,5 +8,5 @@ object Config {
         ?: "https://api.proxyapi.ru/openai/v1"
 
     val MODEL: String = System.getProperty("openai.model")
-        ?: "gpt-5-mini"
+        ?: "gpt-4o"
 }
